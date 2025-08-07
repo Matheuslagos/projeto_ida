@@ -1,0 +1,22 @@
+# .gitignore
+
+# Python
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Pytest / logs
+*.log
+
+# Env
+.env
+
+# Docker volumes ou databases locais
+*.db
+*.pid
+
+# System files
+.DS_Store
+Thumbs.db
