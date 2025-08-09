@@ -1,4 +1,3 @@
--- Habilita a extensão tablefunc, necessária para a função crosstab (pivot)
 CREATE EXTENSION IF NOT EXISTS tablefunc;
 
 -- Cria (ou substitui) a view final com a análise de variação
@@ -65,7 +64,6 @@ FROM
     media_mensal m
 LEFT JOIN
     crosstab(
-        -- A consulta fonte agora é autossuficiente e não depende de CTEs.
         'WITH
             dados_indicador_interno AS (
                 SELECT t.mes_ano, g.nome_grupo, f.valor
@@ -92,7 +90,6 @@ LEFT JOIN
         JOIN media_mensal_interno mm ON vpg.mes_ano = mm.mes_ano
         ORDER BY 1,2',
         
-        -- A consulta de categorias já era autossuficiente.
         'SELECT DISTINCT g.nome_grupo
          FROM datamart_ida.fato_ida f
          JOIN datamart_ida.dim_grupo_economico g ON f.id_grupo = g.id_grupo
