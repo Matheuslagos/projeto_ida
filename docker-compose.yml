@@ -12,11 +12,16 @@ services:
       - "5432:5432"
 
   python:
-    image: python:3.11.12-bookworm
+    build: 
+      context: ./python
     container_name: python_ida
-    working_dir: /app
     volumes:
       - ./python:/app
+      - ./view:/app/view
     depends_on:
       - db
-    command: tail -f /dev/null
+    environment:
+      - POSTGRES_DB=ida_db
+      - POSTGRES_USER=ida_user
+      - POSTGRES_PASSWORD=ida_pass
+    command: python main.py
