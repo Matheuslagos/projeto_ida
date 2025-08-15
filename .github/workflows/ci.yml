@@ -18,11 +18,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build and Run ETL Pipeline
-        run: docker compose up --abort-on-container-exit
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for ETL process to complete
+        run: |
+          EXIT_CODE=$(docker wait python_ida)
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "ETL process failed with exit code $EXIT_CODE"
+            echo "--- Python Container Logs ---"
+            docker logs python_ida
+            exit 1
+          fi
+          echo "ETL process completed successfully."
 
       - name: Verify View Creation in PostgreSQL
         run: |
           echo "Waiting for PostgreSQL to be ready for checks..."
           sleep 20
           docker exec postgres_ida psql -U ida_user -d ida_db -c "\d datamart_ida.vw_variacao_ida" | grep "View"
+          
+      - name: Clean up containers
+        if: always()
+        run: docker-compose down
