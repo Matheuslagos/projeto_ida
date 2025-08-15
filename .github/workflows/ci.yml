@@ -1,0 +1,28 @@
+name: CI Pipeline - Build and Run ETL
+
+on:
+
+  push:
+    branches: [ develop ]
+
+  workflow_dispatch:
+
+jobs:
+
+  build-and-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and Run ETL Pipeline
+        run: docker-compose up --abort-on-container-exit
+
+      - name: Verify View Creation in PostgreSQL
+        run: |
+          echo "Waiting for PostgreSQL to be ready for checks..."
+          sleep 20
+          docker exec postgres_ida psql -U ida_user -d ida_db -c "\d datamart_ida.vw_variacao_ida" | grep "View"
