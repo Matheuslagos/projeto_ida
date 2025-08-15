@@ -37,7 +37,7 @@ jobs:
           echo "Waiting for PostgreSQL to be ready for checks..."
           sleep 20
           docker exec postgres_ida psql -U ida_user -d ida_db -c "\d datamart_ida.vw_variacao_ida" | grep "View"
-          
+
       - name: Clean up containers
         if: always()
-        run: docker-compose down
+        run: docker compose down
