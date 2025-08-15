@@ -41,3 +41,33 @@ jobs:
       - name: Clean up containers
         if: always()
         run: docker compose down
+
+  deploy-to-azure:
+    
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Azure VM
+      
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            
+            cd ~/projeto_ida
+            
+            # Puxar as últimas alterações da branch develop
+            echo ">>> Pulling latest changes..."
+            git pull origin develop
+            
+            # Para e remove os conteineres antigos
+            echo ">>> Stopping old containers..."
+            docker compose down
+            
+            # Constrói as novas imagens e inicia os serviços em segundo plano
+            echo ">>> Starting new containers..."
+            docker compose up -d 
+            
+            echo ">>> Deployment completed successfully!"
