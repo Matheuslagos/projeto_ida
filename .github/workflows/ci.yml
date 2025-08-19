@@ -1,0 +1,73 @@
+name: CI Pipeline - Build and Run ETL
+
+on:
+
+  push:
+    branches: [ develop ]
+
+  workflow_dispatch:
+
+jobs:
+
+  build-and-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start services
+        run: docker compose up -d
+
+      - name: Wait for ETL process to complete
+        run: |
+          EXIT_CODE=$(docker wait python_ida)
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "ETL process failed with exit code $EXIT_CODE"
+            echo "--- Python Container Logs ---"
+            docker logs python_ida
+            exit 1
+          fi
+          echo "ETL process completed successfully."
+
+      - name: Verify View Creation in PostgreSQL
+        run: |
+          echo "Waiting for PostgreSQL to be ready for checks..."
+          sleep 20
+          docker exec postgres_ida psql -U ida_user -d ida_db -c "\d datamart_ida.vw_variacao_ida" | grep "View"
+
+      - name: Clean up containers
+        if: always()
+        run: docker compose down
+
+  deploy-to-azure:
+    
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Azure VM
+      
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            
+            cd ~/projeto_ida
+            
+            # Puxar as últimas alterações da branch develop
+            echo ">>> Pulling latest changes..."
+            git pull origin develop
+            
+            # Para e remove os conteineres antigos
+            echo ">>> Stopping old containers..."
+            sudo docker compose down
+            
+            # Constrói as novas imagens e inicia os serviços em segundo plano
+            echo ">>> Starting new containers..."
+            sudo docker compose up -d 
+            
+            echo ">>> Deployment completed successfully!"
